@@ -60,7 +60,11 @@ LD_LIBRARY_PATH=/workspace/.cache/pw-libs:$LD_LIBRARY_PATH python3 tools/verify.
 - 서비스워커 등록 후 오프라인 전환·재접속 동작 확인
 - 결과는 `logs/verify-report.md`, 화면은 `shots/`
 
-## GitHub Pages 배포 시 (아직 배포하지 않음)
+## GitHub Pages 배포 (라이브)
+
+- 서비스: **https://wjoehasa-eng.github.io/hakpok-playbook/**
+- 저장소: https://github.com/wjoehasa-eng/hakpok-playbook (public, `main` / `/` root)
+- 설치는 위 주소를 모바일 브라우저에서 열고 "홈 화면에 추가"하면 됩니다.
 
 공개 저장소에는 아래 **공개 파일만** 올립니다. `data/cases_2026.json`, `tools/`, `logs/`, `raw/`는 올리지 않습니다.
 
