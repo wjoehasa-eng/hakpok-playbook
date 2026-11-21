@@ -1,17 +1,19 @@
-/* 2026 학교폭력 실전 플레이북 — Service Worker (Network-First, ?v=1)
+/* 2026 학교폭력 실전 플레이북 — Service Worker (Network-First, ?v=3)
  * 네트워크가 되면 최신을 받고, 실패하면 캐시로 연다. 오프라인에서도 앱·데이터가 그대로 뜬다.
  */
-var VERSION = 'v1';
-var CACHE = 'hakpok-playbook-' + VERSION;
+var VERSION = 'hakpok-playbook-v3';
+var CACHE = VERSION;
 var CORE = [
   './',
   './index.html',
-  './index.html?v=1',
-  './css/app.css?v=1',
-  './js/app.js?v=1',
-  './js/tree.js?v=1',
-  './data/official_2026.json?v=1',
-  './data/cases_public.json?v=1',
+  './index.html?v=3',
+  './css/app.css?v=3',
+  './js/tree.js?v=3',
+  './js/stagedata.js?v=3',
+  './js/app.js?v=3',
+  './data/official_2026.json?v=3',
+  './data/cases_public.json?v=3',
+  './data/cases_oneline.json?v=3',
   './manifest.webmanifest',
   './icons/icon-192.png',
   './icons/icon-512.png',

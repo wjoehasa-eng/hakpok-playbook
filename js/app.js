@@ -60,7 +60,7 @@
   }
 
   /* ---------- 탭 ---------- */
-  var VIEWS = ['nav', 'calc', 'risk', 'search'];
+  var VIEWS = ['nav', 'calc', 'risk', 'py', 'search'];
   function showView(name) {
     VIEWS.forEach(function (v) {
       var sec = $('#view-' + v); var tab = $('#tab-' + v);
@@ -70,7 +70,7 @@
     });
     if (history.replaceState) history.replaceState(null, '', '#' + name);
     window.scrollTo(0, 0);
-    document.title = ({ nav: '분기 트리', calc: '기한·생기부 계산기', risk: '지뢰·예외', search: '검색·양식' }[name] || '') + ' · 2026 학교폭력 플레이북';
+    document.title = ({ nav: '분기 트리', calc: '기한·생기부 계산기', risk: '지뢰·예외', py: '진행 체크', search: '검색·양식' }[name] || '') + ' · 2026 학교폭력 플레이북';
   }
   $$('.tab').forEach(function (t) { t.addEventListener('click', function () { showView(t.dataset.view); }); });
 
@@ -135,6 +135,9 @@
       host.appendChild(wrap);
     }
 
+    var formBox = formChips(id);
+    if (formBox) host.appendChild(formBox);
+
     if (node.gate) host.appendChild(renderGate(node, id));
 
     if (node.options && node.options.length) {
@@ -190,9 +193,54 @@
     return box;
   }
 
+  /* ---------- 단계별 양식 칩 + 양식 시트 ---------- */
+  var STAGE = window.HAKPOK_STAGE || { FORMS: {}, NODE_FORMS: {}, QUIZ: [], CHECK_STEPS: [] };
+
+  function formChips(nodeId) {
+    var codes = (STAGE.NODE_FORMS || {})[nodeId] || [];
+    if (!codes.length) return null;
+    var box = el('div', { class: 'node-forms' }, [el('span', { class: 'node-forms-label', text: '이 단계에서 쓸 양식' })]);
+    var chips = el('div', { class: 'chips' });
+    codes.forEach(function (code) {
+      var f = (STAGE.FORMS || {})[code];
+      chips.appendChild(el('button', {
+        class: 'chip form-chip', type: 'button',
+        text: f ? code + ' ' + f.name : code,
+        onclick: function () { openSheet(code); }
+      }));
+    });
+    box.appendChild(chips);
+    return box;
+  }
+
+  function openSheet(code) {
+    var f = (STAGE.FORMS || {})[code];
+    if (!f) return;
+    $('#sheetTitle').textContent = code + ' · ' + f.name;
+    var body = $('#sheetBody');
+    body.innerHTML = '';
+    body.appendChild(el('div', { class: 'sheet-meta' }, [el('span', { class: 'page-badge', text: f.page }), el('span', { class: 'tag form', text: code })]));
+    [['작성 주체', f.who], ['사용·제출·보관', f.how], ['주의', f.warning]].forEach(function (row) {
+      body.appendChild(el('div', { class: 'sheet-row ' + (row[0] === '주의' ? 'warn' : '') }, [
+        el('span', { class: 'k', text: row[0] }),
+        el('p', { class: 'v', text: row[1] })
+      ]));
+    });
+    body.appendChild(el('p', { class: 'calc-note', text: '※ 양식 원본은 2026 가이드북 부록1(' + f.page + ')에 있습니다. 이 앱은 작성 내용을 저장하지 않습니다.' }));
+    $('#sheetBackdrop').hidden = false;
+    $('#sheet').hidden = false;
+    $('#sheetClose').focus();
+  }
+  function closeSheet() {
+    $('#sheetBackdrop').hidden = true;
+    $('#sheet').hidden = true;
+  }
+  $('#sheetClose').addEventListener('click', closeSheet);
+  $('#sheetBackdrop').addEventListener('click', closeSheet);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !$('#sheet').hidden) closeSheet(); });
+
   function go(nextId) {
-    if (!nextId || !TREE.nodes[nextId]) return;
-    treeState.path.push(nextId);
+    if (!nextId || !TREE.nodes[nextId]) return;    treeState.path.push(nextId);
     renderTree();
     var top = $('#view-nav').getBoundingClientRect().top + window.scrollY - 60;
     window.scrollTo({ top: top, behavior: 'smooth' });
@@ -211,16 +259,24 @@
   });
 
   /* ---------- 데이터 ---------- */
+  var DATA_ONELINE = {};
+  function onelineOf(c) {
+    return String(DATA_ONELINE[c.id] || c.oneline || '').trim() || '카드를 펼쳐 상황 · 검증 결론 · 실전 대응을 확인하세요.';
+  }
   function loadData() {
     var badge = $('#dataBadge');
     return Promise.all([
-      fetch('data/official_2026.json?v=1', { cache: 'no-cache' }).then(function (r) { if (!r.ok) throw new Error('official ' + r.status); return r.json(); }),
-      fetch('data/cases_public.json?v=1', { cache: 'no-cache' }).then(function (r) { if (!r.ok) throw new Error('cases ' + r.status); return r.json(); })
+      fetch('data/official_2026.json?v=3', { cache: 'no-cache' }).then(function (r) { if (!r.ok) throw new Error('official ' + r.status); return r.json(); }),
+      fetch('data/cases_public.json?v=3', { cache: 'no-cache' }).then(function (r) { if (!r.ok) throw new Error('cases ' + r.status); return r.json(); })
     ]).then(function (res) {
       DATA.official = res[0]; DATA.cases = res[1];
       badge.textContent = '근거 쪽수 표시';
       badge.className = 'pill ok';
       buildSearchIndex(); renderRisk(); renderForms(); renderTOC(); renderDeadlineFull(); runSearch();
+      return fetch('data/cases_oneline.json?v=3', { cache: 'no-cache' })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (j) { DATA_ONELINE = (j && j.items) || {}; renderRisk(); })
+        .catch(function () { /* 한 줄 요약은 없어도 동작한다 */ });
     }).catch(function (err) {
       badge.textContent = '데이터 로드 실패';
       badge.className = 'pill warn';
@@ -252,6 +308,7 @@
   function initCalc() {
     var today = new Date();
     $('#inDate').value = iso(today);
+    $('#sepDate').value = iso(addDays(today, 1));
     $('#calcToday').textContent = '오늘(' + fmt(today) + ') 인지로';
     runCalc();
 
@@ -278,15 +335,16 @@
 
   function calcRows() {
     var inD = parseISO($('#inDate').value);
+    var sepD = parseISO($('#sepDate').value) || (inD ? addDays(inD, 1) : null);
     var reqD = parseISO($('#reqDate').value);
     var decD = parseISO($('#decDate').value);
     var out = [];
     if (!inD) return out;
     out.push({
       title: '인지일 기준', rows: [
-        { k: '① 피해학생 분리 시행', d: addDays(inD, 1), note: '인지 후 24시간 이내 · 인지 시각 +24시간', hot: true },
+        { k: '① 피해학생 분리 시행 (24시간)', d: addDays(inD, 1), note: '인지 후 24시간 이내 · 인지 시각 +24시간', hot: true },
         { k: '② 교육(지원)청 사안 보고', d: addDays(inD, 2), note: '48시간 이내 · 불가피하면 유선 선행 후 공문' },
-        { k: '③ 분리 종료 (최대 7일)', d: addDays(inD, 6), note: '1~7일 · 초일 산입 · 공휴일·토요일 포함', hot: true },
+        { k: '③ 분리기간 만료 (시행일 포함 7일)', d: sepD ? addDays(sepD, 6) : null, note: '시행일을 1일로 셈 · 공휴일·토요일 포함 (53쪽)', hot: true, sep: true },
         { k: '④ 조사·전담기구 완료 (자체해결 결정 또는 심의위 요청)', d: addDays(inD, 14), note: '14일 이내' },
         { k: '⑤ 연기 시 최종 한도', d: addDays(inD, 21), note: '14일 + 7일 · 넘기면 절차 위반 소지', hot: true }
       ]
@@ -320,14 +378,29 @@
       host.appendChild(el('p', { class: 'empty', text: '인지일을 넣으면 기한이 계산됩니다.' }));
       return;
     }
+    var sepD = parseISO($('#sepDate').value);
     groups.forEach(function (g) {
       var card = el('div', { class: 'calc-card' }, [el('h4', {}, [el('span', { text: '⏱️' }), document.createTextNode(g.title)])]);
       g.rows.forEach(function (r) {
+        if (r.d == null) return;
+        var dow = r.d.getDay();
+        var weekend = dow === 0 || dow === 6;
+        var meta = el('small', { text: r.note });
+        var v = el('span', { class: 'v' }, [document.createTextNode(fmt(r.d)), el('b', { class: 'dday-badge' + (r.hot ? ' hot' : ''), text: rel(r.d) }), meta]);
+        if (weekend) {
+          v.appendChild(el('span', {
+            class: 'wk-badge ' + (r.sep ? 'ok' : 'warn'),
+            text: r.sep ? '주말도 기간에 포함 — 연장 없음(53쪽)' : '주말 만료 — 익일 평일 연장 여부는 교육지원청 확인'
+          }));
+        }
         card.appendChild(el('div', { class: 'calc-line' + (r.hot ? ' hot' : '') }, [
           el('span', { class: 'k', text: r.k }),
-          el('span', { class: 'v' }, [document.createTextNode(fmt(r.d)), el('small', { text: rel(r.d) + ' · ' + r.note })])
+          v
         ]));
       });
+      if (g.title === '인지일 기준' && sepD) {
+        card.appendChild(el('p', { class: 'calc-note', text: '※ 분리 1일차 = 분리 시행일(' + fmt(sepD) + '). 시행일을 바꾸면 ③이 그날부터 7일로 다시 계산됩니다.' }));
+      }
       host.appendChild(card);
     });
     host.appendChild(el('p', { class: 'calc-note', text: '※ 분리기간만 "초일 산입·공휴일 포함"이 명시되어 있습니다(53쪽). 나머지 기한의 초일 산입 여부와 휴일 처리 방식은 소속 교육지원청에 확인해 확정하세요.' }));
@@ -411,22 +484,49 @@
   }
 
   /* ---------- 지뢰·예외 ---------- */
-  var caseFilter = 'all';
+  var caseFilter = 'all', stageFilter = 'all', caseQuery = '';
+  var GRADE_TEXT = { red: '복구 불가·감사', yellow: '예외 주의', green: '실무 팁' };
+  /* 데이터의 grade_label 앞에 깨진 문자·이모지가 붙어도 한글만 남긴다(U+FFFD 방어) */
+  function gradeText(c) {
+    var t = String(c.grade_label || '').replace(/^[^가-힣]*/, '').trim();
+    return t || GRADE_TEXT[c.grade] || '';
+  }
+  function caseHit(c, q) {
+    if (!q) return true;
+    var blob = [c.headline, c.stage, c.situation, c.conclusion, c.playbook]
+      .concat((c.basis || []).map(function (b) { return b.ref + ' ' + b.point; }))
+      .concat((c.discarded || []).map(function (x) { return x.claim + ' ' + x.reason; }))
+      .join(' ').toLowerCase();
+    return q.toLowerCase().split(/\s+/).filter(Boolean).every(function (t) { return blob.indexOf(t) >= 0; });
+  }
   function renderRisk() {
     if (!DATA.cases) return;
     var host = $('#caseList'); host.innerHTML = '';
-    var list = DATA.cases.cases.filter(function (c) { return caseFilter === 'all' || c.grade === caseFilter; });
-    if (!list.length) { host.appendChild(el('p', { class: 'empty', text: '해당 등급의 사례가 없습니다.' })); }
+    var list = DATA.cases.cases.filter(function (c) {
+      return (caseFilter === 'all' || c.grade === caseFilter) &&
+             (stageFilter === 'all' || c.stage === stageFilter) &&
+             caseHit(c, caseQuery);
+    });
+    var cnt = $('#caseCount');
+    if (cnt) {
+      var s = DATA.cases.stats || {};
+      cnt.textContent = list.length + '건 표시 · 전체 ' + DATA.cases.cases.length + '건 (🔴 ' + (s.red || 0) + ' · 🟡 ' + (s.yellow || 0) + ' · 🟢 ' + (s.green || 0) + ')';
+    }
+    if (!list.length) { host.appendChild(el('p', { class: 'empty', text: '조건에 맞는 사례가 없습니다. 등급·단계·검색어를 풀어 보세요.' })); }
     list.forEach(function (c) {
       var gl = { red: '🔴', yellow: '🟡', green: '🟢' }[c.grade] || '•';
       var d = el('details', { class: 'case ' + c.grade });
+      if (caseQuery) d.open = true;
       d.appendChild(el('summary', {}, [
         el('span', { class: 'gl', text: gl }),
-        el('div', {}, [
+        el('div', { class: 'case-summary-main' }, [
           el('div', { class: 'case-title', text: c.headline }),
+          el('div', { class: 'case-oneline', text: onelineOf(c) }),
           el('div', { class: 'case-meta' }, [
-            el('span', { class: 'tag ' + (c.grade === 'red' ? 'case' : 'rule'), text: c.grade_label.replace(/^[🔴🟡🟢]\s*/, '') }),
-            el('span', { text: c.verdict })
+            el('span', { class: 'tag ' + (c.grade === 'red' ? 'case' : 'rule'), text: gradeText(c) }),
+            c.stage ? el('span', { class: 'tag stage', text: c.stage }) : null,
+            el('span', { text: c.verdict }),
+            el('span', { class: 'case-toggle', text: '상황·검증·대응' })
           ])
         ])
       ]));
@@ -488,6 +588,24 @@
       caseFilter = c.dataset.grade; renderRisk();
     });
   });
+  $$('#stageFilter .chip').forEach(function (c) {
+    c.addEventListener('click', function () {
+      $$('#stageFilter .chip').forEach(function (x) { x.classList.toggle('is-on', x === c); });
+      stageFilter = c.dataset.stage; renderRisk();
+    });
+  });
+  var caseQEl = $('#caseQ');
+  if (caseQEl) caseQEl.addEventListener('input', function () { caseQuery = caseQEl.value || ''; renderRisk(); });
+  var caseQClear = $('#caseQClear');
+  if (caseQClear) caseQClear.addEventListener('click', function () { if (caseQEl) caseQEl.value = ''; caseQuery = ''; renderRisk(); });
+  $('#caseOpenAll').addEventListener('click', function () {
+    $$('#caseList details').forEach(function (d) { d.open = true; });
+    toast('모든 카드를 폈습니다');
+  });
+  $('#caseCloseAll').addEventListener('click', function () {
+    $$('#caseList details').forEach(function (d) { d.open = false; });
+    toast('모든 카드를 접었습니다');
+  });
 
   /* ---------- 검색 ---------- */
   var INDEX = [];
@@ -516,7 +634,7 @@
       (DATA.cases.cases || []).forEach(function (c) {
         INDEX.push({
           type: 'case', title: c.grade_label + ' ' + c.headline,
-          body: c.situation + ' / ' + c.playbook,
+          body: (c.stage ? '[' + c.stage + '] ' : '') + c.situation + ' / ' + c.playbook,
           ref: (c.basis && c.basis[0] ? c.basis[0].ref : ''), tag: '지뢰'
         });
       });
@@ -579,10 +697,12 @@
   function renderForms() {
     var host = $('#formGrid'); host.innerHTML = '';
     (DATA.official.forms || []).forEach(function (f) {
-      host.appendChild(el('div', { class: 'form-item' }, [
+      var detail = (STAGE.FORMS || {})[f.code];
+      host.appendChild(el('button', { class: 'form-item', type: 'button', onclick: function () { openSheet(f.code); } }, [
         el('span', { class: 'code', text: f.code }),
         el('span', { text: f.name }),
-        el('span', { class: 'pg', text: 'p.' + f.page })
+        el('span', { class: 'pg', text: 'p.' + f.page }),
+        detail ? null : el('span', { class: 'muted small', text: ' · 안내 준비 중' })
       ]));
     });
   }
@@ -603,13 +723,209 @@
     host.appendChild(el('p', { class: 'calc-note', text: '문서: ' + DATA.official.basis + ' · 쪽수는 PDF 페이지 = 인쇄 쪽수' }));
   }
 
+  /* ---------- O/X 퀴즈 ---------- */
+  var quizOrder = [], quizPick = {}, quizDone = 0;
+  function quizReset(shuffle) {
+    var idx = (STAGE.QUIZ || []).map(function (_, i) { return i; });
+    if (shuffle) {
+      for (var i = idx.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1)); var t = idx[i]; idx[i] = idx[j]; idx[j] = t;
+      }
+    }
+    quizOrder = idx; quizPick = {}; quizDone = 0;
+    renderQuiz();
+  }
+  function renderQuiz() {
+    var host = $('#quizList'); if (!host) return;
+    host.innerHTML = '';
+    var total = quizOrder.length;
+    var right = 0;
+    quizOrder.forEach(function (qi, n) {
+      var q = STAGE.QUIZ[qi]; if (!q) return;
+      var picked = quizPick[qi];
+      var card = el('div', { class: 'quiz-card' + (picked == null ? '' : (picked === q.answer ? ' ok' : ' bad')) });
+      card.appendChild(el('div', { class: 'quiz-q' }, [
+        el('span', { class: 'quiz-no', text: String(n + 1) }),
+        el('span', { class: 'quiz-stmt', text: q.stmt })
+      ]));
+      var btns = el('div', { class: 'quiz-btns' });
+      [true, false].forEach(function (val) {
+        var b = el('button', {
+          class: 'quiz-btn' + (picked == null ? '' : (q.answer === val ? ' is-answer' : (picked === val ? ' is-wrong' : ''))),
+          type: 'button', text: val ? 'O' : 'X',
+          'aria-label': (val ? 'O' : 'X') + ' 선택',
+          onclick: function () {
+            if (quizPick[qi] != null) return;
+            quizPick[qi] = val; quizDone++;
+            renderQuiz();
+          }
+        });
+        if (picked != null) b.disabled = true;
+        btns.appendChild(b);
+      });
+      card.appendChild(btns);
+      if (picked != null) {
+        var good = picked === q.answer;
+        if (good) right++;
+        card.appendChild(el('div', { class: 'quiz-answer ' + (good ? 'ok' : 'bad') }, [
+          el('p', { class: 'quiz-verdict' }, [
+            el('b', { text: (good ? '정답 ' : '틀렸습니다 — 정답 ') + (q.answer ? 'O' : 'X') }),
+            el('span', { class: 'page-badge', text: q.ref })
+          ]),
+          el('p', { class: 'quiz-row' }, [el('span', { class: 'k', text: '검증 결론' }), el('span', { class: 'v', text: q.verdict })]),
+          el('p', { class: 'quiz-row' }, [el('span', { class: 'k', text: '왜 함정' }), el('span', { class: 'v', text: q.trap })])
+        ]));
+      }
+      host.appendChild(card);
+    });
+    var score = $('#quizScore');
+    if (score) score.textContent = quizDone ? right + ' / ' + quizDone + ' 정답' : '0 / 0 정답';
+    var prog = $('#quizProgress');
+    if (prog) prog.textContent = quizDone + ' / ' + total + ' 문제 풀었습니다';
+  }
+  $('#quizShuffle').addEventListener('click', function () { quizReset(true); toast('문제 순서를 섞었습니다'); });
+  $('#quizReset').addEventListener('click', function () { quizReset(false); toast('처음부터 다시 풉니다'); });
+
+  /* ---------- 익명 사안 진행 체크 (localStorage) ---------- */
+  var TRACK_KEY = 'hakpok.cases.v3';
+  var TRACK_MAX = 3;
+  var LETTERS = ['A', 'B', 'C', 'D'];
+
+  function trackLoad() {
+    try {
+      var raw = window.localStorage.getItem(TRACK_KEY);
+      var arr = raw ? JSON.parse(raw) : [];
+      return Array.isArray(arr) ? arr : [];
+    } catch (e) { return []; }
+  }
+  function trackSave(arr) {
+    try { window.localStorage.setItem(TRACK_KEY, JSON.stringify(arr)); return true; }
+    catch (e) { return false; }
+  }
+  function privacyProblem(txt) {
+    var s = String(txt || '');
+    if (!s) return '';
+    if (s.indexOf('@') >= 0) return '이메일·핸들로 보이는 입력은 저장하지 않습니다.';
+    if (/\d{3}\s*-\s*\d{3,}/.test(s) || /\d{7,}/.test(s)) return '전화번호·학번처럼 보이는 숫자는 저장하지 않습니다.';
+    if (/(초등|중학|고등|학교|반|번)/.test(s) && /\d/.test(s)) return '학교·학급을 특정할 수 있는 표기는 피해 주세요(예: 사안 A).';
+    return '';
+  }
+  function parseDate(v) {
+    var d = parseISO(v); return d;
+  }
+  function trackRender() {
+    var host = $('#trackList'); if (!host) return;
+    host.innerHTML = '';
+    var arr = trackLoad();
+    if (!arr.length) {
+      host.appendChild(el('p', { class: 'empty', text: '저장된 사안이 없습니다. 인지일을 넣고 "사안 추가"를 누르면 기한과 체크리스트가 생깁니다.' }));
+      return;
+    }
+    arr.forEach(function (item) {
+      var start = parseDate(item.date);
+      if (!start) return;
+      var done = item.checks || {};
+      var total = (STAGE.CHECK_STEPS || []).length;
+      var doneN = (STAGE.CHECK_STEPS || []).filter(function (s) { return done[s.key]; }).length;
+      var card = el('div', { class: 'track-card' });
+      var head = el('div', { class: 'track-head' }, [
+        el('div', {}, [
+          el('strong', { class: 'track-label', text: item.label }),
+          el('span', { class: 'muted small', text: ' · 인지 ' + fmt(start) })
+        ]),
+        el('div', { class: 'track-head-right' }, [
+          el('span', { class: 'track-progress', text: doneN + '/' + total }),
+          el('button', {
+            class: 'track-del', type: 'button', text: '삭제', 'aria-label': item.label + ' 삭제',
+            onclick: function () {
+              var next = trackLoad().filter(function (x) { return x.id !== item.id; });
+              trackSave(next); trackRender(); toast('사안을 지웠습니다');
+            }
+          })
+        ])
+      ]);
+      card.appendChild(head);
+
+      var nextStep = null;
+      (STAGE.CHECK_STEPS || []).forEach(function (s) {
+        if (!done[s.key] && nextStep == null) nextStep = s;
+      });
+      if (nextStep && nextStep.days != null) {
+        var nd = addDays(start, nextStep.days);
+        card.appendChild(el('p', { class: 'track-next' }, [
+          el('b', { text: '다음: ' + nextStep.label }),
+          document.createTextNode(' ' + fmt(nd)),
+          el('span', { class: 'dday-badge' + (daysFromToday(nd) < 0 ? ' hot' : ''), text: rel(nd) })
+        ]));
+      } else if (!nextStep) {
+        card.appendChild(el('p', { class: 'track-next done', text: '체크리스트를 모두 마쳤습니다. 서류 보관·이관까지 확인하세요.' }));
+      }
+
+      var list = el('ul', { class: 'track-steps' });
+      (STAGE.CHECK_STEPS || []).forEach(function (s) {
+        var on = !!done[s.key];
+        var due = s.days != null ? addDays(start, s.days) : null;
+        var lab = el('label', { class: 'track-step' + (on ? ' is-on' : '') }, [
+          el('input', { type: 'checkbox', checked: on ? 'checked' : null }),
+          el('span', { class: 'track-step-main' }, [
+            el('span', { class: 'track-step-label', text: s.label }),
+            el('span', { class: 'track-step-meta' }, [
+              due ? el('b', { class: 'track-date', text: fmt(due) }) : el('b', { class: 'track-date', text: '통보·종결 후' }),
+              due ? el('span', { class: 'dday-badge' + (daysFromToday(due) < 0 && !on ? ' hot' : ''), text: rel(due) }) : null,
+              el('span', { class: 'page-badge', text: s.ref }),
+              s.form ? el('button', {
+                class: 'chip form-chip mini', type: 'button', text: s.form,
+                onclick: function (ev) { ev.preventDefault(); openSheet(s.form); }
+              }) : null
+            ])
+          ])
+        ]);
+        lab.querySelector('input').addEventListener('change', function (e) {
+          var arr2 = trackLoad();
+          arr2.forEach(function (x) { if (x.id === item.id) { x.checks = x.checks || {}; x.checks[s.key] = e.target.checked; } });
+          trackSave(arr2); trackRender();
+        });
+        list.appendChild(el('li', {}, [lab]));
+      });
+      card.appendChild(list);
+      host.appendChild(card);
+    });
+  }
+
+  $('#trackAdd').addEventListener('click', function () {
+    var arr = trackLoad();
+    var msg = $('#trackMsg');
+    if (arr.length >= TRACK_MAX) { msg.textContent = '익명 사안은 최대 3건까지 저장됩니다. 하나를 지우고 추가하세요.'; return; }
+    var d = parseISO($('#trackDate').value);
+    if (!d) { msg.textContent = '인지일을 먼저 넣어 주세요.'; return; }
+    var label = ($('#trackLabel').value || '').trim();
+    var bad = privacyProblem(label);
+    if (bad) { msg.textContent = bad; return; }
+    var used = arr.map(function (x) { return x.label; });
+    var letter = LETTERS[arr.length] || 'D';
+    var k = 0;
+    while (used.indexOf('사안 ' + letter) >= 0 && k < 10) { k++; letter = LETTERS[(arr.length + k) % LETTERS.length]; }
+    if (!label) label = '사안 ' + letter;
+    arr.push({ id: 'c' + Date.now(), label: label, date: iso(d), checks: {} });
+    if (!trackSave(arr)) { msg.textContent = '이 브라우저에서는 저장이 차단되었습니다(시크릿 모드 등).'; return; }
+    $('#trackLabel').value = '';
+    msg.textContent = '추가했습니다. 이 브라우저에만 저장됩니다.';
+    trackRender();
+  });
+  $('#trackClearAll').addEventListener('click', function () {
+    var arr = trackLoad();
+    if (!arr.length) { $('#trackMsg').textContent = '지울 사안이 없습니다.'; return; }
+    trackSave([]); trackRender();
+    $('#trackMsg').textContent = '모두 지웠습니다.';
+  });
+
   /* ---------- 이벤트 묶음 ---------- */
   $('#calcRun').addEventListener('click', runCalc);
-  $('#calcToday').addEventListener('click', function () { $('#inDate').value = iso(new Date()); runCalc(); });
-  ['#inDate', '#reqDate', '#decDate'].forEach(function (s) { $(s).addEventListener('change', runCalc); });
+  $('#calcToday').addEventListener('click', function () { $('#inDate').value = iso(new Date()); $('#sepDate').value = iso(addDays(new Date(), 1)); runCalc(); });
+  ['#inDate', '#sepDate', '#reqDate', '#decDate'].forEach(function (s) { $(s).addEventListener('change', runCalc); });
   $('#calcCopy').addEventListener('click', function () {
     var groups = calcRows(); var lines = [];
-    groups.forEach(function (g) { lines.push('[' + g.title + ']'); g.rows.forEach(function (r) { lines.push(r.k + ': ' + fmt(r.d)); }); });
+    groups.forEach(function (g) { lines.push('[' + g.title + ']'); g.rows.forEach(function (r) { if (r.d != null) lines.push(r.k + ': ' + fmt(r.d) + ' (' + rel(r.d) + ')'); }); });
     var text = lines.join('\n');
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(text).then(function () { toast('기한표를 복사했습니다'); }, function () { toast('복사가 차단되었습니다'); });
@@ -636,6 +952,9 @@
   /* ---------- 시작 ---------- */
   renderTree();
   initCalc();
+  quizReset(false);
+  $('#trackDate').value = iso(new Date());
+  trackRender();
   var hash = (location.hash || '').replace('#', '');
   showView(VIEWS.indexOf(hash) >= 0 ? hash : 'nav');
   loadData();

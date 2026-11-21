@@ -4,14 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>2026 학교폭력 실전 플레이북</title>
-<meta name="description" content="2026년도 일부개정 학교폭력 사안처리 가이드북(교육부, 216쪽) 기준 사안처리 분기 트리·기한 계산기·생기부 계산기·지뢰 대조표·양식 색인.">
+<meta name="description" content="2026년도 일부개정 학교폭력 사안처리 가이드북(교육부, 216쪽) 기준 사안처리 분기 트리·기한 계산기·생기부 계산기·지뢰 대조표·양식 색인·O/X 학습·익명 진행 체크.">
 <meta name="theme-color" content="#123a72">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="학폭 플레이북">
-<link rel="manifest" href="manifest.webmanifest?v=1">
+<link rel="manifest" href="manifest.webmanifest?v=3">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <link rel="icon" href="icons/icon-192.png">
-<link rel="stylesheet" href="css/app.css?v=1">
+<link rel="stylesheet" href="css/app.css?v=3">
 </head>
 <body>
 <a class="skip" href="#main">본문으로 건너뛰기</a>
@@ -37,7 +37,7 @@
   <section class="view" id="view-nav" role="tabpanel" aria-labelledby="tab-nav">
     <div class="view-head">
       <h2>경우의 수 분기 트리</h2>
-      <p>인지부터 조치·기재까지, 지금 상황에서 하나씩 눌러가며 확인합니다. 각 단계마다 근거 쪽수가 붙습니다.</p>
+      <p>인지부터 조치·기재까지, 지금 상황에서 하나씩 눌러가며 확인합니다. 각 단계마다 근거 쪽수와 그 단계에서 쓸 양식이 붙습니다.</p>
     </div>
     <div class="tree-toolbar">
       <button class="btn btn-ghost" type="button" id="treeHome">처음부터</button>
@@ -55,6 +55,10 @@
         <button class="chip" type="button" data-goto="article2">2호 위반</button>
         <button class="chip" type="button" data-goto="notcase">사안 아님</button>
         <button class="chip" type="button" data-goto="foreign">이주배경학생</button>
+        <button class="chip" type="button" data-goto="cyber">사이버폭력</button>
+        <button class="chip" type="button" data-goto="crossschool">타교·교외·방학</button>
+        <button class="chip" type="button" data-goto="reopen">자체해결 후 재요청</button>
+        <button class="chip" type="button" data-goto="rightsviol">교권침해 경합</button>
         <button class="chip" type="button" data-goto="emergency">긴급조치</button>
         <button class="chip" type="button" data-goto="deletereview">졸업 직전 삭제</button>
       </div>
@@ -81,6 +85,10 @@
             <input type="date" id="inDate">
           </label>
           <label class="field">
+            <span>분리 시행일 <em>인지일+1일 기본</em></span>
+            <input type="date" id="sepDate">
+          </label>
+          <label class="field">
             <span>심의위 개최 요청일 <em>선택</em></span>
             <input type="date" id="reqDate">
           </label>
@@ -94,7 +102,7 @@
           <button class="btn btn-ghost" type="button" id="calcToday">오늘 인지로</button>
           <button class="btn btn-ghost" type="button" id="calcCopy">표 복사</button>
         </div>
-        <p class="muted small" id="calcHint">인지일만 넣어도 24시간·48시간·7일·14일·21일이 계산됩니다.</p>
+        <p class="muted small" id="calcHint">인지일만 넣어도 24시간·48시간·7일·14일·21일이 계산됩니다. 분리 시행일을 바꾸면 분리 만료일이 그날부터 다시 계산됩니다.</p>
       </div>
       <div id="deadlineOut" class="calc-out" aria-live="polite"></div>
       <details class="card details">
@@ -151,12 +159,13 @@
   <section class="view" id="view-risk" role="tabpanel" aria-labelledby="tab-risk" hidden>
     <div class="view-head">
       <h2>지뢰·예외 · 폐기된 옛날 규정</h2>
-      <p>현장에서 통하는 말이 2026 기준에서 어디까지 맞는지, 쪽수와 함께 대조합니다.</p>
+      <p>현장에서 통하는 말이 2026 기준에서 어디까지 맞는지, 쪽수와 함께 대조합니다. 카드는 한 줄 요약만 먼저 보여 주고, 상세는 눌러서 폅니다.</p>
     </div>
-    <div class="seg seg-3" role="tablist" aria-label="지뢰 탭">
-      <button class="seg-btn is-on" type="button" role="tab" aria-selected="true" data-pane="pane-cases">🚨 실전 지뢰 9</button>
+    <div class="seg seg-4" role="tablist" aria-label="지뢰 탭">
+      <button class="seg-btn is-on" type="button" role="tab" aria-selected="true" data-pane="pane-cases">🚨 실전 지뢰 76</button>
+      <button class="seg-btn" type="button" role="tab" aria-selected="false" data-pane="pane-quiz">🎯 O/X 퀴즈</button>
       <button class="seg-btn" type="button" role="tab" aria-selected="false" data-pane="pane-changes">🔁 2026 개정 11</button>
-      <button class="seg-btn" type="button" role="tab" aria-selected="false" data-pane="pane-legacy">🚫 폐기 11 + 오해 4</button>
+      <button class="seg-btn" type="button" role="tab" aria-selected="false" data-pane="pane-legacy">🚫 폐기 11 + 오해 58</button>
     </div>
 
     <div class="pane" id="pane-cases">
@@ -166,7 +175,42 @@
         <button class="chip" type="button" data-grade="yellow">🟡 예외 주의</button>
         <button class="chip" type="button" data-grade="green">🟢 실무 팁</button>
       </div>
+      <div class="chips filter-chips stage-chips" id="stageFilter">
+        <button class="chip is-on" type="button" data-stage="all">전체 단계</button>
+        <button class="chip" type="button" data-stage="인지·분리">인지·분리</button>
+        <button class="chip" type="button" data-stage="조사·자체해결">조사·자체해결</button>
+        <button class="chip" type="button" data-stage="심의·조치">심의·조치</button>
+        <button class="chip" type="button" data-stage="생기부·불복">생기부·불복</button>
+        <button class="chip" type="button" data-stage="특수사안">특수사안</button>
+      </div>
+      <div class="case-search">
+        <input type="search" id="caseQ" placeholder="사례 안에서 찾기 — 예: 2호, 삭제, 비밀, 자체해결" autocomplete="off" aria-label="사례 검색어">
+        <button class="btn" type="button" id="caseQClear">지우기</button>
+      </div>
+      <div class="case-toolbar">
+        <p class="muted small" id="caseCount" aria-live="polite"></p>
+        <div class="case-toolbar-btns">
+          <button class="btn btn-ghost" type="button" id="caseOpenAll">전체 펼치기</button>
+          <button class="btn btn-ghost" type="button" id="caseCloseAll">전체 접기</button>
+        </div>
+      </div>
       <div id="caseList" class="case-list"></div>
+    </div>
+
+    <div class="pane" id="pane-quiz" hidden>
+      <div class="card quiz-head">
+        <div class="quiz-top">
+          <span class="quiz-score" id="quizScore">0 / 0 정답</span>
+          <span class="muted small" id="quizProgress"></span>
+        </div>
+        <p class="muted small">검증된 지뢰 76건과 폐기 통설 58건에서 초보 담당자가 가장 자주 틀리는 것만 골랐습니다. O/X를 누르면 그 자리에서 정답·쪽수·검증 결론·함정 이유가 나옵니다.</p>
+        <div class="btn-row">
+          <button class="btn btn-ghost" type="button" id="quizShuffle">순서 섞기</button>
+          <button class="btn btn-ghost" type="button" id="quizReset">처음부터</button>
+        </div>
+      </div>
+      <div id="quizList" class="quiz-list"></div>
+      <p class="calc-note">※ 퀴즈는 학습용입니다. 실제 판단은 2026 가이드북 원문·교육지원청 지침을 따릅니다.</p>
     </div>
 
     <div class="pane" id="pane-changes" hidden>
@@ -182,12 +226,43 @@
       <h3 class="mini-title">폐기된 규정·용어 11건</h3>
       <p class="muted small">학교규칙·계획서·연수자료에 남아 있으면 지도점검에서 지적되는 항목입니다.</p>
       <div id="legacyList" class="legacy-list"></div>
-      <h3 class="mini-title" style="margin-top:22px">검증에서 폐기한 현장 통설 4건</h3>
+      <h3 class="mini-title" style="margin-top:22px">검증에서 폐기한 현장 통설 58건</h3>
       <div id="mythList" class="legacy-list"></div>
     </div>
   </section>
 
-  <!-- 4. 검색·양식 -->
+  <!-- 4. 익명 진행 체크 -->
+  <section class="view" id="view-py" role="tabpanel" aria-labelledby="tab-py" hidden>
+    <div class="view-head">
+      <h2>내 사안 진행 체크</h2>
+      <p>이름 없이 '사안 A (11/21 인지)'처럼만 적고, 인지일 기준 기한과 단계별 완료를 따라갑니다.</p>
+    </div>
+    <div class="card privacy-note">
+      <strong>개인정보 입력 금지</strong>
+      <p>학생·보호자 이름, 학교명, 연락처, 사안 내용은 적지 마세요. 이 화면의 입력값은 <b>이 브라우저에만</b> 저장되고 서버로 보내지 않습니다. 기록이 필요한 내용은 학교 공식 서류(접수대장·확인서)에만 남기세요.</p>
+    </div>
+    <div class="card">
+      <div class="field-grid">
+        <label class="field">
+          <span>익명 라벨 <em>선택 · 비우면 자동</em></span>
+          <input type="text" id="trackLabel" maxlength="20" placeholder="예: 사안 A" autocomplete="off">
+        </label>
+        <label class="field">
+          <span>인지일 <em>필수</em></span>
+          <input type="date" id="trackDate">
+        </label>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" type="button" id="trackAdd">사안 추가</button>
+        <button class="btn btn-ghost" type="button" id="trackClearAll">전체 삭제</button>
+      </div>
+      <p class="muted small" id="trackMsg" aria-live="polite">최대 3건까지 저장됩니다. 브라우저 저장공간을 지우면 함께 사라집니다.</p>
+    </div>
+    <div id="trackList" class="track-list"></div>
+    <p class="calc-note">※ 기한은 2026 가이드북 쪽수 기준입니다. 초일 산입·휴일 처리는 분리기간 외에는 소속 교육지원청 확인이 필요합니다.</p>
+  </section>
+
+  <!-- 5. 검색·양식 -->
   <section class="view" id="view-search" role="tabpanel" aria-labelledby="tab-search" hidden>
     <div class="view-head">
       <h2>통합 검색 · 양식 색인</h2>
@@ -207,7 +282,7 @@
     <p class="muted small" id="qCount"></p>
     <div id="searchList" class="search-list"></div>
 
-    <h3 class="mini-title" style="margin-top:26px">부록1 양식 23종 (145~172쪽)</h3>
+    <h3 class="mini-title" style="margin-top:26px">부록1 양식 23종 (145~172쪽) — 누르면 작성·제출·주의</h3>
     <div class="form-grid" id="formGrid"></div>
 
     <details class="card details" style="margin-top:22px">
@@ -227,6 +302,9 @@
   <button class="tab" id="tab-risk" type="button" role="tab" aria-selected="false" aria-controls="view-risk" data-view="risk">
     <span class="tab-ico" aria-hidden="true">🚨</span><span>지뢰·예외</span>
   </button>
+  <button class="tab" id="tab-py" type="button" role="tab" aria-selected="false" aria-controls="view-py" data-view="py">
+    <span class="tab-ico" aria-hidden="true">🗂️</span><span>진행 체크</span>
+  </button>
   <button class="tab" id="tab-search" type="button" role="tab" aria-selected="false" aria-controls="view-search" data-view="search">
     <span class="tab-ico" aria-hidden="true">🔍</span><span>검색·양식</span>
   </button>
@@ -234,7 +312,20 @@
 
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-<script src="js/tree.js?v=1"></script>
-<script src="js/app.js?v=1"></script>
+<!-- 양식 상세 시트 -->
+<div id="sheetBackdrop" class="sheet-backdrop" hidden></div>
+<div id="sheet" class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle" hidden>
+  <div class="sheet-inner">
+    <div class="sheet-head">
+      <h3 id="sheetTitle">양식</h3>
+      <button class="sheet-close" type="button" id="sheetClose" aria-label="닫기">✕</button>
+    </div>
+    <div id="sheetBody" class="sheet-body"></div>
+  </div>
+</div>
+
+<script src="js/tree.js?v=3"></script>
+<script src="js/stagedata.js?v=3"></script>
+<script src="js/app.js?v=3"></script>
 </body>
 </html>
