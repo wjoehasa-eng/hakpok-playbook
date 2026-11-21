@@ -35,7 +35,7 @@ tools/build-cases-public.py  cases_2026.json → cases_public.json 살균 변환
 tools/merge_qa.py          검증 원장 → cases_2026.json
 tools/pg.py                원문 쪽수 검색 도우미
 tools/make-icons.py        PWA 아이콘 생성(192/512/maskable)
-tools/verify.py            Playwright 로컬 전수 검증(295개 체크)
+tools/verify.py            Playwright 로컬 전수 검증(299개 체크)
 tools/verify-live.py       Playwright 라이브(GitHub Pages) 전수 검증
 manifest.webmanifest       PWA 매니페스트
 sw.js                      서비스워커(Network-First)
