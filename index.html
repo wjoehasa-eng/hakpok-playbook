@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>2026 학교폭력 실전 플레이북</title>
+<meta name="description" content="2026년도 일부개정 학교폭력 사안처리 가이드북(교육부, 216쪽) 기준 사안처리 분기 트리·기한 계산기·생기부 계산기·지뢰 대조표·양식 색인.">
+<meta name="theme-color" content="#123a72">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="학폭 플레이북">
+<link rel="manifest" href="manifest.webmanifest?v=1">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="css/app.css?v=1">
+</head>
+<body>
+<a class="skip" href="#main">본문으로 건너뛰기</a>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <img class="brand-icon" src="icons/icon-192.png" alt="" width="38" height="38">
+      <div class="brand-text">
+        <strong>2026 학교폭력 실전 플레이북</strong>
+        <span>교육부 2026년도 일부개정 · 216쪽 기준</span>
+      </div>
+    </div>
+    <div class="topbar-side">
+      <span id="dataBadge" class="pill" title="데이터 로딩 상태">데이터 확인 중</span>
+      <button id="installBtn" class="pill pill-btn" type="button" hidden>앱으로 설치</button>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+  <!-- 1. 분기 트리 -->
+  <section class="view" id="view-nav" role="tabpanel" aria-labelledby="tab-nav">
+    <div class="view-head">
+      <h2>경우의 수 분기 트리</h2>
+      <p>인지부터 조치·기재까지, 지금 상황에서 하나씩 눌러가며 확인합니다. 각 단계마다 근거 쪽수가 붙습니다.</p>
+    </div>
+    <div class="tree-toolbar">
+      <button class="btn btn-ghost" type="button" id="treeHome">처음부터</button>
+      <button class="btn btn-ghost" type="button" id="treeBack">← 이전</button>
+      <span class="muted small" id="treeCount"></span>
+    </div>
+    <ol class="breadcrumb" id="treePath" aria-label="현재 경로"></ol>
+    <div id="treeNode" class="tree-node" aria-live="polite"></div>
+    <div class="shortcut-block">
+      <h3 class="mini-title">특수 분기 바로가기</h3>
+      <div class="chips" id="treeShortcuts">
+        <button class="chip" type="button" data-goto="sexcrime">성폭력</button>
+        <button class="chip" type="button" data-goto="childabuse">아동학대</button>
+        <button class="chip" type="button" data-goto="counterclaim">맞신고·쌍방</button>
+        <button class="chip" type="button" data-goto="article2">2호 위반</button>
+        <button class="chip" type="button" data-goto="notcase">사안 아님</button>
+        <button class="chip" type="button" data-goto="foreign">이주배경학생</button>
+        <button class="chip" type="button" data-goto="emergency">긴급조치</button>
+        <button class="chip" type="button" data-goto="deletereview">졸업 직전 삭제</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. 계산기 -->
+  <section class="view" id="view-calc" role="tabpanel" aria-labelledby="tab-calc" hidden>
+    <div class="view-head">
+      <h2>기한·생기부 계산기</h2>
+      <p>날짜를 넣으면 기한을 계산합니다. 분리기간만 초일 산입·공휴일 포함이 명시되어 있고, 나머지 기한의 초일 산입 여부는 소속 교육지원청 확인이 필요합니다.</p>
+    </div>
+
+    <div class="seg" role="tablist" aria-label="계산기 종류">
+      <button class="seg-btn is-on" type="button" role="tab" aria-selected="true" data-pane="pane-deadline">⏱️ 기한 계산기</button>
+      <button class="seg-btn" type="button" role="tab" aria-selected="false" data-pane="pane-record">📘 생기부 삭제 계산기</button>
+    </div>
+
+    <div class="pane" id="pane-deadline">
+      <div class="card">
+        <div class="field-grid">
+          <label class="field">
+            <span>사안 인지일 <em>필수</em></span>
+            <input type="date" id="inDate">
+          </label>
+          <label class="field">
+            <span>심의위 개최 요청일 <em>선택</em></span>
+            <input type="date" id="reqDate">
+          </label>
+          <label class="field">
+            <span>조치 결정일(통보일) <em>선택</em></span>
+            <input type="date" id="decDate">
+          </label>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-primary" type="button" id="calcRun">계산</button>
+          <button class="btn btn-ghost" type="button" id="calcToday">오늘 인지로</button>
+          <button class="btn btn-ghost" type="button" id="calcCopy">표 복사</button>
+        </div>
+        <p class="muted small" id="calcHint">인지일만 넣어도 24시간·48시간·7일·14일·21일이 계산됩니다.</p>
+      </div>
+      <div id="deadlineOut" class="calc-out" aria-live="polite"></div>
+      <details class="card details">
+        <summary>기한 12종 전체 표 (원문 근거)</summary>
+        <div id="deadlineFull" class="table-wrap"></div>
+      </details>
+    </div>
+
+    <div class="pane" id="pane-record" hidden>
+      <div class="card">
+        <div class="field-grid">
+          <label class="field">
+            <span>조치 호수</span>
+            <select id="measureSel"></select>
+          </label>
+          <label class="field">
+            <span>조치 결정일 <em>선택</em></span>
+            <input type="date" id="recDate">
+          </label>
+          <label class="field">
+            <span>졸업 학년도 (2월 말 기준) <em>선택</em></span>
+            <select id="gradYear"></select>
+          </label>
+        </div>
+      </div>
+      <div id="recordOut" class="calc-out" aria-live="polite"></div>
+
+      <div class="card">
+        <h3 class="card-title">졸업 직전 삭제 심의 확인자료 ①~⑤</h3>
+        <p class="muted small">하나라도 미제출이면 삭제할 수 없습니다 (143쪽). 체크는 이 화면에서만 쓰이고 저장되지 않습니다.</p>
+        <ul class="check5" id="check5">
+          <li><label><input type="checkbox"><span>① 담임 의견서</span></label></li>
+          <li><label><input type="checkbox"><span>② 조치 이행 확인서</span></label></li>
+          <li><label><input type="checkbox"><span>③ 학생 특별교육·심리치료 이수 확인서</span></label></li>
+          <li><label><input type="checkbox"><span>④ 보호자 특별교육 이수 확인서</span></label></li>
+          <li><label><input type="checkbox"><span>⑤ 가해학생 자기 의견서</span></label></li>
+        </ul>
+        <p class="verdict-line" id="check5Out"></p>
+      </div>
+
+      <div class="card">
+        <h3 class="card-title">삭제 심의 배점 예시 100점 (144쪽)</h3>
+        <p class="muted small">가이드북의 예시 배점입니다. 실제 심의위·전담기구 기준은 학교 규정과 지원청 지침을 따릅니다.</p>
+        <div class="score-row"><label for="s1">조치 이행 성실성·진실성</label><span>40점</span><input type="range" id="s1" min="0" max="40" value="0"></div>
+        <div class="score-row"><label for="s2">학교생활 성실성</label><span>20점</span><input type="range" id="s2" min="0" max="20" value="0"></div>
+        <div class="score-row"><label for="s3">피해학생과의 관계</label><span>30점</span><input type="range" id="s3" min="0" max="30" value="0"></div>
+        <div class="score-row"><label for="s4">기타</label><span>10점</span><input type="range" id="s4" min="0" max="10" value="0"></div>
+        <p class="verdict-line">합계 <strong id="scoreTotal">0</strong> / 100점 · 과반수 참석·과반수 찬성으로 삭제 의결</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. 지뢰·예외 -->
+  <section class="view" id="view-risk" role="tabpanel" aria-labelledby="tab-risk" hidden>
+    <div class="view-head">
+      <h2>지뢰·예외 · 폐기된 옛날 규정</h2>
+      <p>현장에서 통하는 말이 2026 기준에서 어디까지 맞는지, 쪽수와 함께 대조합니다.</p>
+    </div>
+    <div class="seg seg-3" role="tablist" aria-label="지뢰 탭">
+      <button class="seg-btn is-on" type="button" role="tab" aria-selected="true" data-pane="pane-cases">🚨 실전 지뢰 9</button>
+      <button class="seg-btn" type="button" role="tab" aria-selected="false" data-pane="pane-changes">🔁 2026 개정 11</button>
+      <button class="seg-btn" type="button" role="tab" aria-selected="false" data-pane="pane-legacy">🚫 폐기 11 + 오해 4</button>
+    </div>
+
+    <div class="pane" id="pane-cases">
+      <div class="chips filter-chips" id="caseFilter">
+        <button class="chip is-on" type="button" data-grade="all">전체</button>
+        <button class="chip" type="button" data-grade="red">🔴 복구 불가·감사</button>
+        <button class="chip" type="button" data-grade="yellow">🟡 예외 주의</button>
+        <button class="chip" type="button" data-grade="green">🟢 실무 팁</button>
+      </div>
+      <div id="caseList" class="case-list"></div>
+    </div>
+
+    <div class="pane" id="pane-changes" hidden>
+      <p class="muted small">2025년판(192쪽)과 2026년판(216쪽) 원문을 직접 대조한 차이입니다. 이 11개 외에는 2024년판 이전 자료만 아니면 2025년판 내용도 유효합니다.</p>
+      <div id="changeList" class="table-wrap"></div>
+    </div>
+
+    <div class="pane" id="pane-legacy" hidden>
+      <div class="legacy" style="border-color:var(--red-line);background:var(--red-soft)">
+        <div class="t">⛔ 2024년판 이전 자료는 근거로 쓰지 않는다</div>
+        <div class="r">분리조치·2호 조치 의무화(2024.3.1) 이전 내용이라 2026 기준과 충돌한다. 오래된 학교규칙·연수자료·카페 서식도 같은 이유로 쓰지 않고, 2026판으로 치환해 다시 쓴다.</div>
+      </div>
+      <h3 class="mini-title">폐기된 규정·용어 11건</h3>
+      <p class="muted small">학교규칙·계획서·연수자료에 남아 있으면 지도점검에서 지적되는 항목입니다.</p>
+      <div id="legacyList" class="legacy-list"></div>
+      <h3 class="mini-title" style="margin-top:22px">검증에서 폐기한 현장 통설 4건</h3>
+      <div id="mythList" class="legacy-list"></div>
+    </div>
+  </section>
+
+  <!-- 4. 검색·양식 -->
+  <section class="view" id="view-search" role="tabpanel" aria-labelledby="tab-search" hidden>
+    <div class="view-head">
+      <h2>통합 검색 · 양식 색인</h2>
+      <p>규정·기한·조치·지뢰·양식을 한 번에 검색합니다. 검색어는 "분리 7일", "자체해결", "2호"처럼 짧게.</p>
+    </div>
+    <div class="search-box">
+      <input type="search" id="q" placeholder="예: 분리, 자체해결, 2호, 삭제, 긴급조치" autocomplete="off" aria-label="검색어">
+      <button class="btn btn-primary" type="button" id="qClear">지우기</button>
+    </div>
+    <div class="chips filter-chips" id="typeFilter">
+      <button class="chip is-on" type="button" data-type="all">전체</button>
+      <button class="chip" type="button" data-type="rule">규정</button>
+      <button class="chip" type="button" data-type="deadline">기한</button>
+      <button class="chip" type="button" data-type="case">지뢰·사례</button>
+      <button class="chip" type="button" data-type="form">양식</button>
+    </div>
+    <p class="muted small" id="qCount"></p>
+    <div id="searchList" class="search-list"></div>
+
+    <h3 class="mini-title" style="margin-top:26px">부록1 양식 23종 (145~172쪽)</h3>
+    <div class="form-grid" id="formGrid"></div>
+
+    <details class="card details" style="margin-top:22px">
+      <summary>목차 · 쪽수 지도 (216쪽)</summary>
+      <div id="tocList" class="table-wrap"></div>
+    </details>
+  </section>
+</main>
+
+<nav class="tabbar" role="tablist" aria-label="주요 화면">
+  <button class="tab is-on" id="tab-nav" type="button" role="tab" aria-selected="true" aria-controls="view-nav" data-view="nav">
+    <span class="tab-ico" aria-hidden="true">🧭</span><span>분기 트리</span>
+  </button>
+  <button class="tab" id="tab-calc" type="button" role="tab" aria-selected="false" aria-controls="view-calc" data-view="calc">
+    <span class="tab-ico" aria-hidden="true">⏱️</span><span>계산기</span>
+  </button>
+  <button class="tab" id="tab-risk" type="button" role="tab" aria-selected="false" aria-controls="view-risk" data-view="risk">
+    <span class="tab-ico" aria-hidden="true">🚨</span><span>지뢰·예외</span>
+  </button>
+  <button class="tab" id="tab-search" type="button" role="tab" aria-selected="false" aria-controls="view-search" data-view="search">
+    <span class="tab-ico" aria-hidden="true">🔍</span><span>검색·양식</span>
+  </button>
+</nav>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<script src="js/tree.js?v=1"></script>
+<script src="js/app.js?v=1"></script>
+</body>
+</html>

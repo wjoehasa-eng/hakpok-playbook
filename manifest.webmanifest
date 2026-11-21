@@ -1,0 +1,20 @@
+{
+  "name": "2026 학교폭력 실전 플레이북",
+  "short_name": "학폭 플레이북",
+  "lang": "ko",
+  "dir": "ltr",
+  "description": "2026년도 일부개정 학교폭력 사안처리 가이드북(교육부, 216쪽) 기준 — 분기 트리, 기한·생기부 계산기, 지뢰 대조표, 양식 23종 색인.",
+  "id": "/hakpok-playbook/",
+  "start_url": "./?v=1",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f1f4fa",
+  "theme_color": "#123a72",
+  "categories": ["education", "productivity"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
