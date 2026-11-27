@@ -921,6 +921,41 @@
     $('#trackMsg').textContent = '모두 지웠습니다.';
   });
 
+  /* 사안 진행 체크를 JSON 파일로 백업·복원 (기기를 바꿔도 그대로) */
+  var te = $('#trackExport');
+  if (te) te.addEventListener('click', function () {
+    var arr = trackLoad();
+    var d = new Date();
+    var name = 'hakpok-cases-' + d.getFullYear() + ('0' + (d.getMonth() + 1)).slice(-2) + ('0' + d.getDate()).slice(-2) + '.json';
+    var blob = new Blob([JSON.stringify({ app: 'hakpok-playbook', kind: 'track', v: 3, exportedAt: new Date().toISOString(), cases: arr }, null, 1)], { type: 'application/json' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = name;
+    document.body.appendChild(a); a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 800);
+    $('#trackMsg').textContent = '사안 ' + arr.length + '건을 JSON 파일로 내려받았습니다.';
+  });
+  var ti = $('#trackImport');
+  if (ti) ti.addEventListener('click', function () { var f = $('#trackImportFile'); if (f) f.click(); });
+  var tif = $('#trackImportFile');
+  if (tif) tif.addEventListener('change', function (e) {
+    var f = e.target.files && e.target.files[0];
+    e.target.value = '';
+    if (!f) return;
+    var rd = new FileReader();
+    rd.onload = function () {
+      var obj;
+      try { obj = JSON.parse(String(rd.result)); } catch (err) { $('#trackMsg').textContent = 'JSON을 읽지 못했습니다.'; return; }
+      var arr = obj && (obj.cases || obj);
+      if (!Array.isArray(arr)) { $('#trackMsg').textContent = '사안 백업 파일이 아닙니다.'; return; }
+      arr = arr.filter(function (x) { return x && x.date; }).slice(0, TRACK_MAX);
+      if (!window.confirm('백업의 사안 ' + arr.length + '건으로 이 브라우저의 사안(' + trackLoad().length + '건)을 바꿀까요?')) return;
+      if (!trackSave(arr)) { $('#trackMsg').textContent = '이 브라우저에서는 저장이 차단되었습니다(시크릿 모드 등).'; return; }
+      trackRender();
+      $('#trackMsg').textContent = '사안 ' + arr.length + '건을 불러왔습니다.';
+    };
+    rd.readAsText(f);
+  });
+
   var EXEC_KEY = 'hakpok.execUrl';
 
   function b64e(s) {

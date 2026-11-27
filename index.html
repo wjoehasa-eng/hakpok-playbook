@@ -256,6 +256,9 @@
       <div class="btn-row">
         <button class="btn btn-primary" type="button" id="trackAdd">사안 추가</button>
         <button class="btn btn-ghost" type="button" id="trackClearAll">전체 삭제</button>
+        <button class="btn btn-ghost" type="button" id="trackExport">JSON 내보내기</button>
+        <button class="btn btn-ghost" type="button" id="trackImport">JSON 불러오기</button>
+        <input type="file" id="trackImportFile" accept=".json,application/json" hidden>
       </div>
       <p class="muted small" id="trackMsg" aria-live="polite">최대 3건까지 저장됩니다. 브라우저 저장공간을 지우면 함께 사라집니다.</p>
     </div>

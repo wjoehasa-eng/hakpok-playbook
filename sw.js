@@ -1,7 +1,7 @@
 /* 2026 학교폭력 실전 플레이북 — Service Worker (Network-First, ?v=4)
  * 네트워크가 되면 최신을 받고, 실패하면 캐시로 연다. 오프라인에서도 앱·데이터가 그대로 뜬다.
  */
-var VERSION = 'hakpok-playbook-v4';
+var VERSION = 'hakpok-playbook-v5';
 var CACHE = VERSION;
 var CORE = [
   './',
