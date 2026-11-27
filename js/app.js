@@ -61,7 +61,9 @@
 
   /* ---------- 탭 ---------- */
   var VIEWS = ['nav', 'calc', 'risk', 'py', 'search'];
+  var currentView = 'nav';
   function showView(name) {
+    currentView = name;
     VIEWS.forEach(function (v) {
       var sec = $('#view-' + v); var tab = $('#tab-' + v);
       var on = v === name;
@@ -266,14 +268,14 @@
   function loadData() {
     var badge = $('#dataBadge');
     return Promise.all([
-      fetch('data/official_2026.json?v=3', { cache: 'no-cache' }).then(function (r) { if (!r.ok) throw new Error('official ' + r.status); return r.json(); }),
-      fetch('data/cases_public.json?v=3', { cache: 'no-cache' }).then(function (r) { if (!r.ok) throw new Error('cases ' + r.status); return r.json(); })
+      fetch('data/official_2026.json?v=4', { cache: 'no-cache' }).then(function (r) { if (!r.ok) throw new Error('official ' + r.status); return r.json(); }),
+      fetch('data/cases_public.json?v=4', { cache: 'no-cache' }).then(function (r) { if (!r.ok) throw new Error('cases ' + r.status); return r.json(); })
     ]).then(function (res) {
       DATA.official = res[0]; DATA.cases = res[1];
       badge.textContent = '근거 쪽수 표시';
       badge.className = 'pill ok';
       buildSearchIndex(); renderRisk(); renderForms(); renderTOC(); renderDeadlineFull(); runSearch();
-      return fetch('data/cases_oneline.json?v=3', { cache: 'no-cache' })
+      return fetch('data/cases_oneline.json?v=4', { cache: 'no-cache' })
         .then(function (r) { return r.ok ? r.json() : null; })
         .then(function (j) { DATA_ONELINE = (j && j.items) || {}; renderRisk(); })
         .catch(function () { /* 한 줄 요약은 없어도 동작한다 */ });
@@ -919,6 +921,137 @@
     $('#trackMsg').textContent = '모두 지웠습니다.';
   });
 
+  var EXEC_KEY = 'hakpok.execUrl';
+
+  function b64e(s) {
+    try {
+      return btoa(unescape(encodeURIComponent(String(s || ''))))
+        .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    } catch (e) { return ''; }
+  }
+  function b64d(s) {
+    try {
+      var t = String(s || '').replace(/-/g, '+').replace(/_/g, '/');
+      while (t.length % 4) t += '=';
+      return decodeURIComponent(escape(atob(t)));
+    } catch (e) { return ''; }
+  }
+  function execGet() {
+    try { return window.localStorage.getItem(EXEC_KEY) || ''; } catch (e) { return ''; }
+  }
+  function execSet(url) {
+    try {
+      if (url) window.localStorage.setItem(EXEC_KEY, url);
+      else window.localStorage.removeItem(EXEC_KEY);
+      return true;
+    } catch (e) { return false; }
+  }
+  function safeDecode(s) {
+    try { return decodeURIComponent(String(s || '')); } catch (e) { return ''; }
+  }
+  function readHashLink() {
+    var m = String(location.hash || '').match(/[#&]s=([^&]+)/);
+    if (!m) return '';
+    var v = b64d(safeDecode(m[1]));
+    return /^https:\/\//i.test(v) ? v : '';
+  }
+  /* 붙여넣은 값이 '#s=' 링크여도 안에서 주소만 뽑아 쓴다 */
+  function normalizeExec(v) {
+    var s = String(v || '').trim();
+    var m = s.match(/[#&]s=([^&]+)/);
+    if (m) { var d = b64d(safeDecode(m[1])); if (d) s = d.trim(); }
+    return s;
+  }
+  /* #s= 링크로 열렸으면 저장하고 주소창 해시를 정리한다 */
+  function applyHashLink() {
+    var url = readHashLink();
+    if (!url) return '';
+    execSet(url);
+    if (history.replaceState) {
+      try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* 무시 */ }
+    }
+    return url;
+  }
+  function pageLink() {
+    var base = location.origin + location.pathname;
+    var url = execGet();
+    return url ? base + '#s=' + b64e(url) : base;
+  }
+  function linkRender() {
+    var url = execGet();
+    var input = $('#linkUrl');
+    if (input && document.activeElement !== input) input.value = url;
+    var st = $('#linkState');
+    if (st) {
+      st.className = 'link-state' + (url ? ' on' : '');
+      st.innerHTML = url
+        ? '<b>연결 주소가 저장되어 있습니다.</b> 이 브라우저에만 남습니다. 시트 연동 기능이 붙으면 이 주소를 그대로 씁니다.'
+        : '<b>저장된 연결 주소가 없습니다.</b> 기본 주소로도 모든 화면을 그대로 쓸 수 있습니다. 나중에 시트 연동을 붙일 때 여기에 주소를 저장해 두면 됩니다.';
+    }
+    var help = $('#linkHelp');
+    if (help) help.textContent = url
+      ? '이 주소가 담긴 #s= 링크를 복사합니다. 다른 기기·브라우저에서 이 링크로 열면 주소가 자동으로 저장됩니다.'
+      : '지금은 기본 주소(해시 없음)를 복사합니다. 포털·즐겨찾기에 그대로 넣어 두면 됩니다. 주소를 저장하면 #s= 링크로 바뀝니다.';
+  }
+  function openLink() {
+    var msg = $('#linkMsg'); if (msg) msg.textContent = '';
+    linkRender();
+    $('#linkBackdrop').hidden = false;
+    $('#linkSheet').hidden = false;
+    $('#linkClose').focus();
+  }
+  function closeLink() {
+    $('#linkBackdrop').hidden = true;
+    $('#linkSheet').hidden = true;
+  }
+  $('#linkBtn').addEventListener('click', openLink);
+  $('#linkClose').addEventListener('click', closeLink);
+  $('#linkBackdrop').addEventListener('click', closeLink);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !$('#linkSheet').hidden) closeLink(); });
+
+  $('#linkSave').addEventListener('click', function () {
+    var msg = $('#linkMsg');
+    var v = normalizeExec($('#linkUrl').value);
+    if (!v) { msg.textContent = '주소를 넣어 주세요.'; return; }
+    if (!/^https:\/\/\S+$/i.test(v)) { msg.textContent = 'https:// 로 시작하는 주소만 저장합니다 (Apps Script는 …/exec 형식).'; return; }
+    if (!execSet(v)) { msg.textContent = '이 브라우저에서는 저장이 차단되었습니다(시크릿 모드 등).'; return; }
+    $('#linkUrl').value = v;
+    linkRender();
+    msg.textContent = '저장했습니다. 이 브라우저에만 남습니다.';
+    toast('연결 주소를 저장했습니다');
+  });
+  $('#linkClear').addEventListener('click', function () {
+    execSet('');
+    $('#linkUrl').value = '';
+    linkRender();
+    $('#linkMsg').textContent = '저장된 주소를 지웠습니다. 기본 주소로도 그대로 쓸 수 있습니다.';
+    toast('연결 주소를 지웠습니다');
+  });
+  $('#linkCopy').addEventListener('click', function () {
+    var link = pageLink();
+    var msg = $('#linkMsg');
+    var done = function () {
+      if (msg) msg.textContent = '링크를 복사했습니다. 붙여넣어 쓰세요.';
+      toast(execGet() ? '이 페이지 링크를 복사했습니다' : '기본 주소를 복사했습니다');
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(link).then(done, function () { window.prompt('링크를 복사하세요', link); });
+    } else {
+      window.prompt('링크를 복사하세요', link);
+    }
+  });
+
+  /* 앱을 켜 둔 채 주소창에 #s= 링크를 붙여넣은 경우 */
+  window.addEventListener('hashchange', function () {
+    if (!readHashLink()) return;
+    applyHashLink();
+    linkRender();
+    if (history.replaceState) {
+      try { history.replaceState(null, '', '#' + currentView); } catch (e) { /* 무시 */ }
+    }
+    toast('연결 주소를 저장했습니다');
+  });
+
   /* ---------- 이벤트 묶음 ---------- */
   $('#calcRun').addEventListener('click', runCalc);
   $('#calcToday').addEventListener('click', function () { $('#inDate').value = iso(new Date()); $('#sepDate').value = iso(addDays(new Date(), 1)); runCalc(); });
@@ -950,13 +1083,16 @@
   });
 
   /* ---------- 시작 ---------- */
+  var linked = applyHashLink();
   renderTree();
   initCalc();
   quizReset(false);
   $('#trackDate').value = iso(new Date());
   trackRender();
+  linkRender();
   var hash = (location.hash || '').replace('#', '');
   showView(VIEWS.indexOf(hash) >= 0 ? hash : 'nav');
+  if (linked) toast('연결 주소를 이 브라우저에 저장했습니다');
   loadData();
 
   /* PWA */

@@ -352,6 +352,13 @@ tr:last-child td{border-bottom:0}
 .sheet-row .v{font-size:13px;color:var(--ink-2);line-height:1.6;word-break:keep-all}
 .sheet-row.warn .k,.sheet-row.warn .v{color:var(--red)}
 
+/* ===== v4: 시트 연동 주소 · 이 페이지 링크 ===== */
+.link-state{border-radius:10px;padding:9px 11px;font-size:12px;line-height:1.55;background:var(--surface-2);color:var(--ink-2);border:1px solid var(--line);word-break:keep-all}
+.link-state.on{background:var(--green-soft);border-color:var(--green-line);color:var(--green)}
+.link-state b{font-weight:800}
+.sheet .card{margin:10px 0 0;box-shadow:none}
+@media (max-width:560px){#linkBtn .pill-txt{display:none}}
+
 /* ===== v3: 계산기 D-day·주말 배지 ===== */
 .dday-badge{display:inline-block;margin-left:6px;font-size:10.5px;font-weight:800;background:var(--primary-soft);color:var(--primary);border-radius:5px;padding:1px 6px;white-space:nowrap;font-variant-numeric:tabular-nums}
 .dday-badge.hot{background:var(--red-soft);color:var(--red)}
